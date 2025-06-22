@@ -1,0 +1,43 @@
+# Dockerfile sans pré-téléchargement de Whisper
+FROM python:3.9-slim
+
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Installer les dépendances système
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    build-essential \
+    python3-dev \
+    wget \
+    curl \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Créer un utilisateur non-root
+RUN useradd -m -u 1000 appuser
+
+WORKDIR /app
+
+# Copier et installer les requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Créer les dossiers nécessaires
+RUN mkdir -p assets output temp .cache/whisper && \
+    chown -R appuser:appuser /app
+
+# Copier les scripts
+COPY --chown=appuser:appuser *.py ./
+
+USER appuser
+
+# Variables d'environnement pour Whisper
+ENV WHISPER_CACHE_DIR=/app/.cache/whisper
+ENV HF_HOME=/app/.cache/huggingface
+
+VOLUME ["/app/assets", "/app/output"]
+
+CMD ["python", "youtube-shorts-generator.py"]

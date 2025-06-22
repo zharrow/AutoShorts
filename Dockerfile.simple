@@ -1,0 +1,25 @@
+# Dockerfile minimaliste pour version simple
+FROM python:3.9-slim
+
+# Installer uniquement FFmpeg
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Installer uniquement moviepy
+RUN pip install --no-cache-dir moviepy==1.0.3
+
+# Créer les dossiers
+RUN mkdir -p assets output
+
+# Copier uniquement le script simple
+COPY script.py .
+
+# Volumes
+VOLUME ["/app/assets", "/app/output"]
+
+# Commande par défaut
+CMD ["python", "script.py"]

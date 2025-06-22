@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Service principal sans Whisper (plus stable)
+  youtube-shorts-safe:
+    build:
+      context: .
+      dockerfile: Dockerfile.nowhisper
+    container_name: yt-shorts-safe
+    volumes:
+      - ./assets:/app/assets
+      - ./output:/app/output
+      - ./temp:/app/temp
+      - ./youtube-shorts-safe.py:/youtube-shorts-safe.py:ro
+    command: python youtube-shorts-safe.py
+    environment:
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true
+
+  # Service simple (moviepy uniquement)
+  youtube-shorts-simple:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: yt-shorts-simple
+    volumes:
+      - ./assets:/app/assets
+      - ./output:/app/output
+    command: python script.py
+    profiles:
+      - simple
+
+  # Service complet avec Whisper (si ça marche)
+  youtube-shorts-full:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yt-shorts-full
+    volumes:
+      - ./assets:/app/assets
+      - ./output:/app/output
+      - ./temp:/app/temp
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WHISPER_CACHE_DIR=/app/.cache/whisper
+    stdin_open: true
+    tty: true
+    profiles:
+      - full
