@@ -1,46 +1,13 @@
 version: '3.8'
 
 services:
-  youtube-shorts-generator:
+  generator:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: yt-shorts-generator
+      args:
+        WITH_WHISPER: ${WITH_WHISPER:-true}
     volumes:
-      # Monter les dossiers locaux
       - ./assets:/app/assets
       - ./output:/app/output
-      - ./temp:/app/temp
-      # Partager les scripts si vous voulez les modifier
-      - ./youtube-shorts-generator.py:/app/youtube-shorts-generator.py:ro
-      - ./youtube-shorts-simple.py:/app/youtube-shorts-simple.py:ro
-      - ./script.py:/app/script.py:ro
     environment:
-      # Configuration
-      - PYTHONUNBUFFERED=1
-      - TZ=Europe/Paris
-    # Pour le mode interactif
-    stdin_open: true
-    tty: true
-    # Limites de ressources (ajustez selon vos besoins)
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 4G
-        reservations:
-          cpus: '1'
-          memory: 2G
-
-  # Service optionnel pour télécharger uniquement
-  downloader:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: yt-downloader
-    volumes:
-      - ./temp:/app/temp
-      - ./download_only.py:/app/download_only.py:ro
-    command: python download_only.py
-    profiles:
-      - download
+      - TRANSCRIPTION_ENABLED=${TRANSCRIPTION_ENABLED:-true}

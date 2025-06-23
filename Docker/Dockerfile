@@ -1,56 +1,36 @@
-# Dockerfile pour YouTube Shorts Generator
+# Dockerfile
 FROM python:3.11-slim
 
-# Variables d'environnement
+ARG WITH_WHISPER=true
+
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Installer les dépendances système
+# Dépendances système de base
 RUN apt-get update && apt-get install -y \
-    # FFmpeg et outils multimédia
     ffmpeg \
-    # Outils de compilation pour Python
-    build-essential \
-    python3-dev \
-    # Bibliothèques audio
-    libportaudio2 \
-    libasound2-dev \
-    # Outils système
-    wget \
-    curl \
     git \
-    # Nettoyage
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Créer un utilisateur non-root
-RUN useradd -m -u 1000 appuser
-
-# Définir le répertoire de travail
 WORKDIR /app
 
-# Copier les requirements
-COPY requirements.txt .
+# Installation Python de base
+COPY requirements.txt requirements-whisper.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Installer les dépendances Python
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Installation conditionnelle de Whisper
+RUN if [ "$WITH_WHISPER" = "true" ]; then \
+        pip install --no-cache-dir -r requirements-whisper.txt; \
+    fi
 
-# Télécharger le modèle Whisper (pour éviter de le faire à chaque run)
-RUN python -c "import whisper; whisper.load_model('base')"
+# Copier l'application
+COPY src/ ./src/
+COPY assets/ ./assets/
 
-# Créer les dossiers nécessaires
-RUN mkdir -p assets output temp && \
-    chown -R appuser:appuser /app
+# Créer les dossiers
+RUN mkdir -p output temp
 
-# Copier les scripts
-COPY --chown=appuser:appuser *.py ./
-
-# Passer à l'utilisateur non-root
-USER appuser
-
-# Volume pour les assets et output
 VOLUME ["/app/assets", "/app/output"]
 
-# Script par défaut
-CMD ["python", "youtube_shorts_generator.py"]
+CMD ["python", "src/main.py"]
